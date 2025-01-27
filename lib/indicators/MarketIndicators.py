@@ -5,6 +5,7 @@ from lib.indicators.MACD import MACDIndicator
 from lib.indicators.RealizedVolatility import RealizedVolatilityIndicator
 from lib.indicators.HighLowSpread import HighLowSpreadIndicator
 from lib.indicators.OBV import OBVIndicator
+from lib.indicators.ReturnChange import PercentageChangeIndicator
 
 from typing import List, Dict, Callable, Any
 import pandas as pd
@@ -21,7 +22,8 @@ class MarketIndicators:
             'MACD': self._calculate_macd_features,
             'RV': self._calculate_rv_features,
             'HLS': self._calculate_hls_features,
-            'OBV': self._calculate_obv_features
+            'OBV': self._calculate_obv_features,
+            'PCT': self._calculate_pct_features
         }
         
         self.default_params: Dict[str, Dict[str, Any]] = {
@@ -35,7 +37,8 @@ class MarketIndicators:
             },
             'RV': {'periods': [10, 20, 30, 60]},
             'HLS': {'periods': [10, 20]},
-            'OBV': {}
+            'OBV': {},
+            'PCT': {'periods': [5, 20, 50, 200]}
         }
     
     def _calculate_rsi_features(self, df: pd.DataFrame, close_prices: np.ndarray, 
@@ -143,6 +146,14 @@ class MarketIndicators:
             obv_indicator = OBVIndicator(close_prices, volume)
             df['OBV'] = [obv_indicator.calculate(j) for j in range(len(df))]
             
+            return df
+
+    def _calculate_pct_features(self, df: pd.DataFrame, close_prices: np.ndarray, 
+                                params: Dict[str, Any]) -> pd.DataFrame:
+            """Calculates percentage change indicators for specified periods."""
+            for period in params['periods']:
+                pct_indicator = PercentageChangeIndicator(close_prices, period)
+                df[f'PCT_{period}'] = [pct_indicator.calculate(j) for j in range(len(df))]
             return df
 
     def calculate_features(self, df: pd.DataFrame, 

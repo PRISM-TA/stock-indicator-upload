@@ -81,6 +81,13 @@ def upload_indicators(db_session, indicators_df, ticker):
             # Convert index to column
             indicators_df = indicators_df.reset_index()
             
+            # Delete existing records for this ticker
+            deleted_count = session.query(EquityIndicators)\
+                                 .filter(EquityIndicators.ticker == ticker)\
+                                 .delete()
+            
+            print(f"[DEBUG] Deleted {deleted_count} existing records for {ticker}")
+            
             # Create list to store all records
             records = []
             
@@ -127,18 +134,25 @@ def upload_indicators(db_session, indicators_df, ticker):
                     rv_60=row.get('RV_60'),
                     hls_10=row.get('HLS_10'),
                     hls_20=row.get('HLS_20'),
-                    obv=row.get('OBV')
+                    obv=row.get('OBV'),
+                    pct_5=row.get('PCT_5'), 
+                    pct_20=row.get('PCT_20'),
+                    pct_50=row.get('PCT_50'),
+                    pct_200=row.get('PCT_200')
                 )
                 records.append(indicator)
             
             print(f"[DEBUG] Created {len(records)} indicator objects")
             
-            # Bulk insert records
+            # Bulk insert all records
             print("[DEBUG] Starting bulk insert")
             session.bulk_save_objects(records)
+            
+            # Commit all changes
             session.commit()
             
-            print(f"[SUCCESS] Successfully uploaded {len(records)} indicators for {ticker}")
+            print(f"[SUCCESS] Successfully processed {len(indicators_df)} indicators for {ticker}")
+            print(f"         Deleted: {deleted_count}, Inserted: {len(records)}")
             
     except Exception as e:
         print(f"[ERROR] Error in upload_indicators for {ticker}: {str(e)}")
@@ -164,6 +178,7 @@ def main():
     
     # Define parameters
     tickers = [
+        'AAPL',
         'UNH',
         'MSFT',
         'MMM',
@@ -193,7 +208,7 @@ def main():
         'IBM'
     ]
 
-    features = ['RSI', 'SMA', 'EMA', 'MACD', 'RV', 'HLS', 'OBV']
+    features = ['RSI', 'SMA', 'EMA', 'MACD', 'RV', 'HLS', 'OBV', 'PCT']
     print(f"[DEBUG] Processing tickers: {tickers}")
     print(f"[DEBUG] Features to calculate: {features}")
     
@@ -208,7 +223,8 @@ def main():
         },
         'RV': {'periods': [10, 20, 30, 60]},
         'HLS': {'periods': [10, 20]},
-        'OBV': {}
+        'OBV': {},
+        'PCT': {'periods': [5, 20, 50, 200]} # Add Percentage Change
     }
     
     print("[DEBUG] Fetching market data")
