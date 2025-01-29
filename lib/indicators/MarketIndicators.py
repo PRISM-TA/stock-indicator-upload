@@ -51,7 +51,7 @@ class MarketIndicators:
             df.iloc[1, df.columns.get_loc(f'RSI_{period}')] = 100.0
             
             for j in range(2, len(df)):
-                if j < period:
+                if j < period and f'RSI_{j}' in df.columns:
                     df.iloc[j, df.columns.get_loc(f'RSI_{period}')] = df.iloc[j, df.columns.get_loc(f'RSI_{j}')]
                     
         for period in params['periods']:
